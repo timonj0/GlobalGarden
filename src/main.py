@@ -10,7 +10,6 @@ import os
 import logging
 import threading
 
-
 WEATHER_API_KEY = ""
 LOCATION = []
 
@@ -58,6 +57,12 @@ def get_weather():
     lon = LOCATION[1]
     api_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}"
     response = requests.get(api_url, timeout=5)
+
+    # Check if request was successful
+    if response.status_code != 200:
+        logging.error("Request to OpenWeatherMap API failed! Received response: %s", response.text)
+        logging.error("Exiting application.")
+        sys.exit(1)
     json_data = json.loads(response.text)
     return json_data
 
@@ -65,23 +70,26 @@ def get_weather():
 def load_config():
     """Load config from config.cfg"""
     global WEATHER_API_KEY, LOCATION
+    config_path = os.path.join(os.path.dirname(__file__), "config.cfg")
     config = configparser.ConfigParser()
-    if not os.path.exists("config.cfg"):
+    if not os.path.exists(config_path):
         logging.error("Config file not found! Exiting application.")
         sys.exit(1)
-    config.read("config.cfg")
+    config.read(config_path)
     WEATHER_API_KEY = config["WEATHER"]["API_KEY"]
-    LOCATION = [config["WEATHER"]["LOCATION"]]
+    LOCATION = [config["WEATHER"]["LAT"], config["WEATHER"]["LON"]]
 
 
 def main():
     """Main function"""
+    load_config()
     # Add dummy plant
     plants.append(Plant("Dummy", "Dummy plant"))
 
     # Mainloop
     while True:
         weather_data = get_weather()
+        print(weather_data)
         weather = weather_data["weather"][0]["main"]
         rain = weather == "Rain"
         apply_weather(rain)
