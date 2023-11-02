@@ -1,11 +1,18 @@
 """Main backend file for the application."""
 
+import time
 import uuid
+import sys
 import json
 import requests
-import time
+import configparser
+import os
+import logging
+import threading
 
-WEATHER_API_KEY = "38e0e27225dc6cd5efee99d1457f462d"
+
+WEATHER_API_KEY = ""
+LOCATION = []
 
 plants = []
 
@@ -47,12 +54,24 @@ def get_weather():
     # API Call: https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API key}
     # Location of Biel: 47.138466 / 7.247041
 
-    lat = 47.138466
-    lon = 7.247041
+    lat = LOCATION[0]
+    lon = LOCATION[1]
     api_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}"
     response = requests.get(api_url, timeout=5)
     json_data = json.loads(response.text)
     return json_data
+
+
+def load_config():
+    """Load config from config.cfg"""
+    global WEATHER_API_KEY, LOCATION
+    config = configparser.ConfigParser()
+    if not os.path.exists("config.cfg"):
+        logging.error("Config file not found! Exiting application.")
+        sys.exit(1)
+    config.read("config.cfg")
+    WEATHER_API_KEY = config["WEATHER"]["API_KEY"]
+    LOCATION = [config["WEATHER"]["LOCATION"]]
 
 
 def main():
